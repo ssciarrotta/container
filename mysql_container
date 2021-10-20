@@ -1,0 +1,20 @@
+# Crea la directory che sara utilizzata per la persistenza 
+sudo mkdir -pv /var/local/mysql
+
+# Configura il contesto SELinux per i container 
+sudo semanage fcontext -a -t container_file_t '/var/local/mysql(/.*)?'
+
+# Applica le policy appena configurate 
+sudo restorecon -R /var/local/mysql
+
+# Verifica che la directory abbia il corretto contesto selinux 
+ls -ldZ /var/local/mysql
+
+# Configura le permission utente mysql 
+sudo chown -Rv 27:27 /var/local/mysql
+
+# Scarica l'immagine di mysql-5.7 
+sudo podman pull rhscl/mysql-57-rhel7
+
+# Esegue l'immagine creando un container chiamato persist-db 
+sudo podman run --name liferay_db -d -v /var/local/mysql:/var/lib/mysql/data -e MYSQL_DATABASE=lportal -e MYSQL_ROOT_PASSWORD=r00tpa55 -e MYSQL_USER=lportal -e MYSQL_PASSWORD=lportal rhscl/mysql-57-rhel7

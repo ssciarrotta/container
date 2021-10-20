@@ -1,0 +1,33 @@
+# Eserguo l'immagine httpd_parent presente nel repository quay.io/redhattraining creando un container chiamato official-httpd
+sudo podman run -d --name official-httpd -p 8180:80 quay.io/redhattraining/httpd-parent
+
+# Modifico Il contenuto del container aggiungendo una pagina html 
+sudo podman exec -it official-httpd /bin/bash
+bash-4.4# echo "DO180 Page" > /var/www/html/do180.html
+
+# Verifico le differenze tra l'immagine iniziale e quella modificata 
+sudo podman diff official-httpd
+
+# Eseguo lo stop del container 
+sudo podman stop official-httpd
+
+# Eseguo la commit dell'immagine modificata 
+sudo podman commit -a 'Your Name' official-httpd do180-custom-httpd
+
+# Verifico la presenza della nuova immagine 
+sudo podman images
+
+# Esegui il tag dell'immagine per caricarla nel mio container registry 
+sudo podman tag do180-custom-httpd quay.io/ssciarrottaquay/do180-custom-httpd:v1.0
+
+# Carico l'immagine sul container registry 
+sudo podman push quay.io/${RHT_OCP4_QUAY_USER}/do180-custom-httpd:v1.0
+
+# Scarico la nuova immagine 
+sudo podman pull -q quay.io/ssciarrottaquay/do180-custom-httpd:v1.0
+
+# Creo un container con la nuova immagine 
+sudo podman run -d --name test-httpd -p 8280:80 ssciarrottaquay/do180-custom-httpd:v1.0
+
+# Verifico con il comando curl 
+curl http://localhost:8280/do180.html
