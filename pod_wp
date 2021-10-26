@@ -1,0 +1,23 @@
+# Creating the pod with forwarding (publish) of port 80
+miopod=$(sudo podman pod create --name wp_pod -p 127.0.0.1:80:80)
+
+# Creating a persistent volume for the MySQL container
+miovol=$(sudo podman volume create)
+
+# Getting the path of the persistent volume
+pathmiovol=$(sudo podman volume inspect $miovol -f "{{.Mountpoint}}")
+
+# Setting permissions for MySQL on the persistent volume
+sudo chown -R 27:27 $pathmiovol
+
+# Creating and running the MySQL container
+sudo podman run -d --name db -e MYSQL_USER=wordpress -e MYSQL_PASSWORD=wordpress -e MYSQL_DATABASE=wordpress -e MYSQL_ROOT_PASSWORD=rootpwd -v $miovol:/var/lib/mysql/data --pod $miopod registry.access.redhat.com/rhscl/mysql-57-rhel7
+
+# Checking for MySQL service
+sudo podman exec db bash -c 'mysql -u root -e "SELECT 1"'
+
+# Creating and running the WordPress container
+sudo podman run -d --name wp -e WORDPRESS_DB_HOST=127.0.0.1:3306 -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_NAME=wordpress --pod $miopod quay.io/redhattraining/wordpress:5.3.0
+
+# Checking  for WordPress
+curl -s -o /dev/null http://127.0.0.1/
